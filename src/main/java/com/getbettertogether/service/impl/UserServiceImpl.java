@@ -4,11 +4,17 @@ import com.getbettertogether.common.dto.AddTodayInfoDto;
 import com.getbettertogether.common.dto.AddUserDto;
 import com.getbettertogether.common.dto.UpdateUserDto;
 import com.getbettertogether.common.dto.UserWeightListDto;
+import com.getbettertogether.common.dto.AddSportRecordDto;
+import com.getbettertogether.common.dto.UserSportRecordListDto;
 import com.getbettertogether.common.vo.UserWeightListVo;
 import com.getbettertogether.common.vo.UserInfoVo;
+import com.getbettertogether.common.vo.SportTreeVo;
+import com.getbettertogether.common.vo.UserSportRecordListVo;
 import com.getbettertogether.entity.User;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.getbettertogether.entity.UserWeight;
+import com.getbettertogether.entity.Sport;
+import com.getbettertogether.entity.SportRecord;
 import com.getbettertogether.mapper.UserMapper;
 import com.getbettertogether.mapper.UserWeightMapper;
 import com.getbettertogether.mapper.SportMapper;
@@ -23,6 +29,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 /**
@@ -37,6 +46,8 @@ public class UserServiceImpl implements UserService {
 
     private final UserMapper userMapper;
     private final UserWeightMapper userWeightMapper;
+    private final SportMapper sportMapper;
+    private final SportRecordMapper sportRecordMapper;
 
     @Override
     public void addUser(AddUserDto addUserDto) {
@@ -131,6 +142,105 @@ public class UserServiceImpl implements UserService {
 
         res.setBoyWeights(boyWeights);
         res.setGirlWeights(girlWeights);
+        return res;
+    }
+
+    @Override
+    public SportTreeVo getSportTree() {
+        SportTreeVo result = new SportTreeVo();
+        
+        // 查询所有运动项目
+        List<Sport> allSports = sportMapper.selectList(null);
+        
+        // 按父ID分组
+        Map<Integer, List<Sport>> sportsByFatherId = allSports.stream()
+                .collect(Collectors.groupingBy(sport -> sport.getFatherId() == null ? 0 : sport.getFatherId()));
+        
+        // 构建树结构
+        List<SportTreeVo.SportTreeNode> rootNodes = buildSportTree(sportsByFatherId, 0);
+        result.setSportTree(rootNodes);
+        
+        return result;
+    }
+    
+    private List<SportTreeVo.SportTreeNode> buildSportTree(Map<Integer, List<Sport>> sportsByFatherId, Integer fatherId) {
+        List<Sport> children = sportsByFatherId.get(fatherId);
+        if (children == null || children.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        return children.stream()
+                .sorted((s1, s2) -> {
+                    if (s1.getSequence() == null && s2.getSequence() == null) return 0;
+                    if (s1.getSequence() == null) return 1;
+                    if (s2.getSequence() == null) return -1;
+                    return s1.getSequence().compareTo(s2.getSequence());
+                })
+                .map(sport -> {
+                    SportTreeVo.SportTreeNode node = new SportTreeVo.SportTreeNode();
+                    node.setSportId(sport.getSportId());
+                    node.setSportName(sport.getSportName());
+                    node.setCoreName1(sport.getCoreName1());
+                    node.setCoreName2(sport.getCoreName2());
+                    node.setCoreUnit1(sport.getCoreUnit1());
+                    node.setCoreUnit2(sport.getCoreUnit2());
+                    node.setFatherId(sport.getFatherId());
+                    node.setSequence(sport.getSequence());
+                    node.setIsDirectory(sport.getIsDirectory());
+                    
+                    // 递归构建子节点
+                    List<SportTreeVo.SportTreeNode> childNodes = buildSportTree(sportsByFatherId, sport.getSportId());
+                    node.setChildren(childNodes);
+                    
+                    return node;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void addSportRecord(AddSportRecordDto addSportRecordDto) {
+        SportRecord sportRecord = new SportRecord();
+        sportRecord.setUserId(addSportRecordDto.getUserId());
+        sportRecord.setSportId(addSportRecordDto.getSportId());
+        sportRecord.setDate(addSportRecordDto.getDate() != null ? addSportRecordDto.getDate() : LocalDateTime.now());
+        sportRecord.setCoreValue1(addSportRecordDto.getCoreValue1());
+        sportRecord.setCoreValue2(addSportRecordDto.getCoreValue2());
+        sportRecord.setNotes(addSportRecordDto.getNotes());
+        sportRecordMapper.insert(sportRecord);
+    }
+
+    @Override
+    public UserSportRecordListVo getUserSportRecordList(UserSportRecordListDto dto) {
+        UserSportRecordListVo res = new UserSportRecordListVo();
+
+        // 获取当前年份
+        int currentYear = LocalDate.now().getYear();
+
+        // 根据传入的月份值构建查询的月份范围
+        YearMonth targetMonth = YearMonth.of(currentYear, dto.getMonth());
+        LocalDateTime startDate = targetMonth.atDay(1).atStartOfDay();
+        LocalDateTime endDate = targetMonth.atEndOfMonth().atTime(23, 59, 59);
+
+        // 查询男孩（user_id=1）的运动记录
+        List<SportRecord> boySportRecords = sportRecordMapper.selectList(
+                new QueryWrapper<SportRecord>()
+                        .eq("user_id", 1)
+                        .ge("date", startDate)  // 大于等于月份第一天
+                        .le("date", endDate)    // 小于等于月份最后一天
+                        .orderByAsc("date")     // 按日期升序排列
+        );
+
+        // 查询女孩（user_id=2）的运动记录
+        List<SportRecord> girlSportRecords = sportRecordMapper.selectList(
+                new QueryWrapper<SportRecord>()
+                        .eq("user_id", 2)
+                        .ge("date", startDate)  // 大于等于月份第一天
+                        .le("date", endDate)    // 小于等于月份最后一天
+                        .orderByAsc("date")     // 按日期升序排列
+        );
+
+        res.setBoySportRecords(boySportRecords);
+        res.setGirlSportRecords(girlSportRecords);
         return res;
     }
 }

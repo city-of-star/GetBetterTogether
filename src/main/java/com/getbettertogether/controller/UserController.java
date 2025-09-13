@@ -4,8 +4,12 @@ import com.getbettertogether.common.dto.AddTodayInfoDto;
 import com.getbettertogether.common.dto.AddUserDto;
 import com.getbettertogether.common.dto.UpdateUserDto;
 import com.getbettertogether.common.dto.UserWeightListDto;
+import com.getbettertogether.common.dto.AddSportRecordDto;
+import com.getbettertogether.common.dto.UserSportRecordListDto;
 import com.getbettertogether.common.vo.UserWeightListVo;
 import com.getbettertogether.common.vo.UserInfoVo;
+import com.getbettertogether.common.vo.SportTreeVo;
+import com.getbettertogether.common.vo.UserSportRecordListVo;
 import com.getbettertogether.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -46,5 +50,20 @@ public class UserController {
     @PostMapping("/getUserWeightList")
     public UserWeightListVo getUserWeightList(@RequestBody UserWeightListDto dto) {
         return userService.getUserWeightList(dto);
+    }
+
+    @GetMapping("/getSportTree")
+    public SportTreeVo getSportTree() {
+        return userService.getSportTree();
+    }
+
+    @PostMapping("/addSportRecord")
+    public void addSportRecord(@RequestBody AddSportRecordDto addSportRecordDto) {
+        userService.addSportRecord(addSportRecordDto);
+    }
+
+    @PostMapping("/getUserSportRecordList")
+    public UserSportRecordListVo getUserSportRecordList(@RequestBody UserSportRecordListDto dto) {
+        return userService.getUserSportRecordList(dto);
     }
 }

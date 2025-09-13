@@ -22,6 +22,6 @@ public class Sport {
     private String coreUnit1;
     private String coreUnit2;
     private Integer fatherId;
-    private Integer order;
+    private Integer sequence;
     private String isDirectory;
 }

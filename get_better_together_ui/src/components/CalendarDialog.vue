@@ -39,15 +39,123 @@
           </div>
         </div>
 
+        <!-- 运动记录表单 -->
+        <div class="sport-form">
+          <div class="form-section">
+            <div class="section-title">
+              <span class="section-icon">🏃‍♂️</span>
+              <span class="section-text">运动记录</span>
+            </div>
+            
+            <!-- 运动项目选择 -->
+            <div class="sport-selection">
+              <div class="input-group">
+                <span class="input-icon">🎯</span>
+                <span class="input-label">运动项目</span>
+              </div>
+              
+              <!-- Element Plus Tree 组件 -->
+              <div class="sport-tree-container">
+                <el-tree
+                  ref="sportTreeRef"
+                  :data="treeData"
+                  :props="treeProps"
+                  :expand-on-click-node="false"
+                  :highlight-current="true"
+                  :check-strictly="true"
+                  node-key="sportId"
+                  class="sport-tree"
+                  @node-click="handleNodeClick"
+                >
+                  <template #default="{ data }">
+                    <div class="tree-node">
+                      <span class="node-icon">
+                        <el-icon v-if="data.isDirectory === '0'">
+                          <Folder />
+                        </el-icon>
+                        <el-icon v-else>
+                          <Trophy />
+                        </el-icon>
+                      </span>
+                      <span class="node-label">{{ data.sportName }}</span>
+                      <span v-if="data.isDirectory === '0'" class="folder-tag">分类</span>
+                    </div>
+                  </template>
+                </el-tree>
+              </div>
+            </div>
+
+            <!-- 核心数值输入 -->
+            <div v-if="selectedSport" class="core-values">
+              <div v-if="selectedSport.coreName1" class="input-row">
+                <div class="input-group">
+                  <span class="input-icon">📊</span>
+                  <span class="input-label">{{ selectedSport.coreName1 }}</span>
+                </div>
+                <input
+                  v-model="coreValue1"
+                  type="number"
+                  step="0.1"
+                  :placeholder="`请输入${selectedSport.coreName1}`"
+                  class="form-input"
+                />
+                <span class="unit-label">{{ selectedSport.coreUnit1 }}</span>
+              </div>
+              
+              <div v-if="selectedSport.coreName2" class="input-row">
+                <div class="input-group">
+                  <span class="input-icon">⏱️</span>
+                  <span class="input-label">{{ selectedSport.coreName2 }}</span>
+                </div>
+                <input
+                  v-model="coreValue2"
+                  type="number"
+                  step="0.1"
+                  :placeholder="`请输入${selectedSport.coreName2}`"
+                  class="form-input"
+                />
+                <span class="unit-label">{{ selectedSport.coreUnit2 }}</span>
+              </div>
+            </div>
+
+            <!-- 备注输入 -->
+            <div class="input-row">
+              <div class="input-group">
+                <span class="input-icon">📝</span>
+                <span class="input-label">备注</span>
+              </div>
+              <input
+                v-model="sportNotes"
+                type="text"
+                placeholder="请输入备注（可选）"
+                class="form-input"
+              />
+            </div>
+
+            <!-- 保存按钮 -->
+            <div class="input-row">
+              <button
+                @click="saveSportRecord"
+                class="btn btn-save-sport"
+                :class="gender"
+                :disabled="!selectedSportId || (!coreValue1 && !coreValue2)"
+              >
+                保存运动记录
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits, ref } from 'vue'
+import { computed, defineProps, defineEmits, ref, onMounted } from 'vue'
 import axios from '@/utils/axios'
-import { ElMessage } from "element-plus";
+import { ElMessage, ElTree } from "element-plus"
+import { Folder, Trophy } from '@element-plus/icons-vue'
 
 const props = defineProps({
   visible: {
@@ -73,6 +181,29 @@ const emit = defineEmits(['update:visible'])
 // 体重数据
 const weight = ref('')
 
+// 运动记录数据
+const sportTree = ref([])
+const selectedSportId = ref(null)
+const selectedSport = ref(null)
+const coreValue1 = ref('')
+const coreValue2 = ref('')
+const sportNotes = ref('')
+const sportTreeRef = ref()
+
+// Tree 组件配置
+const treeProps = {
+  children: 'children',
+  label: 'sportName'
+}
+
+// 处理树形数据
+const treeData = computed(() => {
+  return sportTree.value.map(category => ({
+    ...category,
+    children: category.children || []
+  }))
+})
+
 // 格式化日期显示
 const formattedDate = computed(() => {
   if (!props.date) return ''
@@ -81,6 +212,35 @@ const formattedDate = computed(() => {
   const day = props.date.getDate()
   return `${year}年${month}月${day}日`
 })
+
+// 获取运动定义树
+const getSportTree = async () => {
+  try {
+    const response = await axios.get('/user/getSportTree')
+    sportTree.value = response.sportTree || []
+  } catch (error) {
+    console.error('获取运动项目失败:', error)
+    ElMessage({
+      message: '获取运动项目失败',
+      type: 'error',
+    })
+  }
+}
+
+// 处理树节点点击
+const handleNodeClick = (data, node) => {
+  // 如果是目录，则切换展开状态
+  if (data.isDirectory === '0') {
+    node.expanded = !node.expanded
+    return
+  }
+  
+  // 选择具体的运动项目
+  selectedSportId.value = data.sportId
+  selectedSport.value = data
+  coreValue1.value = ''
+  coreValue2.value = ''
+}
 
 // 保存体重
 const saveWeight = async () => {
@@ -92,19 +252,73 @@ const saveWeight = async () => {
       weight: parseFloat(weight.value)
     })
     ElMessage({
-      message: '保存成功',
+      message: '体重保存成功',
       type: 'success',
     })
   } catch (error) {
     console.error('保存失败:', error)
+    ElMessage({
+      message: '体重保存失败',
+      type: 'error',
+    })
+  }
+}
+
+// 保存运动记录
+const saveSportRecord = async () => {
+  if (!selectedSportId.value || (!coreValue1.value && !coreValue2.value)) {
+    ElMessage({
+      message: '请选择运动项目并输入至少一个数值',
+      type: 'warning',
+    })
+    return
+  }
+  
+  try {
+    await axios.post('/user/addSportRecord', {
+      userId: props.userId,
+      sportId: selectedSportId.value,
+      date: props.date.toISOString(),
+      coreValue1: coreValue1.value ? parseFloat(coreValue1.value) : null,
+      coreValue2: coreValue2.value ? parseFloat(coreValue2.value) : null,
+      notes: sportNotes.value || null
+    })
+    
+    ElMessage({
+      message: '运动记录保存成功',
+      type: 'success',
+    })
+    
+    // 清空表单
+    selectedSportId.value = null
+    selectedSport.value = null
+    coreValue1.value = ''
+    coreValue2.value = ''
+    sportNotes.value = ''
+  } catch (error) {
+    console.error('保存运动记录失败:', error)
+    ElMessage({
+      message: '运动记录保存失败',
+      type: 'error',
+    })
   }
 }
 
 // 关闭弹窗
 const closeDialog = () => {
   weight.value = ''
+  selectedSportId.value = null
+  selectedSport.value = null
+  coreValue1.value = ''
+  coreValue2.value = ''
+  sportNotes.value = ''
   emit('update:visible', false)
 }
+
+// 组件挂载时获取运动项目数据
+onMounted(() => {
+  getSportTree()
+})
 </script>
 
 <style scoped lang="scss">
@@ -211,7 +425,153 @@ const closeDialog = () => {
 // 体重表单样式
 .weight-form {
   max-width: 350px;
+  margin: 0 0 24px 0;
+}
+
+// 运动记录表单样式
+.sport-form {
+  max-width: 500px;
   margin: 0;
+}
+
+.form-section {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.section-icon {
+  font-size: 18px;
+}
+
+.section-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.core-values {
+  margin: 16px 0;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.unit-label {
+  font-size: 14px;
+  color: #666;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+// 运动选择器样式
+.sport-selection {
+  margin-bottom: 20px;
+}
+
+.sport-tree-container {
+  margin-top: 8px;
+  border: 1px solid #e1e5e9;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.sport-tree {
+  padding: 8px 0;
+  
+  :deep(.el-tree-node) {
+    .el-tree-node__content {
+      height: 40px;
+      padding: 0 16px;
+      border-radius: 6px;
+      margin: 2px 8px;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #f5f7fa;
+      }
+    }
+    
+    &.is-current > .el-tree-node__content {
+      background: #e3f2fd;
+      color: #1976d2;
+      font-weight: 600;
+      
+      .node-label {
+        color: #1976d2;
+      }
+    }
+    
+    .el-tree-node__expand-icon {
+      color: #666;
+      font-size: 14px;
+      
+      &.is-leaf {
+        color: transparent;
+      }
+    }
+  }
+}
+
+.tree-node {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.node-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #666;
+  
+  .el-icon {
+    font-size: 16px;
+  }
+}
+
+.node-label {
+  flex: 1;
+  font-size: 14px;
+  color: #333;
+  transition: all 0.2s ease;
+}
+
+.folder-tag {
+  font-size: 11px;
+  color: #999;
+  background: #f0f0f0;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.btn-save-sport {
+  width: 100%;
+  margin-top: 8px;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
 .input-row {
@@ -303,6 +663,14 @@ const closeDialog = () => {
     max-width: 100%;
   }
   
+  .sport-form {
+    max-width: 100%;
+  }
+  
+  .form-section {
+    padding: 16px;
+  }
+  
   .input-row {
     flex-direction: column;
     gap: 8px;
@@ -310,6 +678,39 @@ const closeDialog = () => {
   
   .btn {
     width: 100%;
+  }
+  
+  .sport-tree-container {
+    border-radius: 8px;
+    max-height: 250px;
+  }
+  
+  .sport-tree {
+    :deep(.el-tree-node) {
+      .el-tree-node__content {
+        height: 36px;
+        padding: 0 12px;
+        margin: 1px 6px;
+      }
+    }
+  }
+  
+  .node-label {
+    font-size: 13px;
+  }
+  
+  .node-icon {
+    width: 16px;
+    height: 16px;
+    
+    .el-icon {
+      font-size: 14px;
+    }
+  }
+  
+  .unit-label {
+    margin-left: 0;
+    margin-top: 4px;
   }
 }
 </style>
