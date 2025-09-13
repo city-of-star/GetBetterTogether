@@ -1,7 +1,10 @@
 package com.getbettertogether.controller;
 
+import com.getbettertogether.common.dto.AddTodayInfoDto;
 import com.getbettertogether.common.dto.AddUserDto;
 import com.getbettertogether.common.dto.UpdateUserDto;
+import com.getbettertogether.common.dto.UserWeightListDto;
+import com.getbettertogether.common.vo.UserWeightListVo;
 import com.getbettertogether.common.vo.UserInfoVo;
 import com.getbettertogether.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -33,5 +36,15 @@ public class UserController {
     @GetMapping("/info")
     public UserInfoVo getUser() {
         return userService.getUsers();
+    }
+
+    @PostMapping("/setUserInfo")
+    public void AddTodayInfo(@RequestBody AddTodayInfoDto addTodayInfoDto) {
+        userService.addTodayInfo(addTodayInfoDto);
+    }
+
+    @PostMapping("/getUserWeightList")
+    public UserWeightListVo getUserWeightList(@RequestBody UserWeightListDto dto) {
+        return userService.getUserWeightList(dto);
     }
 }

@@ -33,6 +33,8 @@
       v-model:visible="dialogVisible"
       :date="selectedDate"
       :gender="dialogGender"
+      :user-id="currentUserId"
+      @save-success="handleSaveSuccess"
   />
 </template>
 
@@ -41,14 +43,38 @@ import Calendar from '@/components/Calendar.vue'
 import CalendarDialog from "@/components/CalendarDialog.vue";
 import { ref } from "vue";
 
-const dialogVisible = ref(false);
-const selectedDate = ref(null);
-const dialogGender = ref('male');
+const dialogVisible = ref(false);  // 控制对话框显示/隐藏状态
+const selectedDate = ref(null);    // 存储用户选中的日期
+const dialogGender = ref('male');  // 存储当前对话框对应的性别（male/female）
+const currentUserId = ref(1);      // 当前用户ID
 
+/**
+ * 显示日历对话框
+ * @param {string} gender - 性别标识（'male' 或 'female'）
+ * @param {Date} date - 用户选中的日期
+ */
 const showDialog = (gender, date) => {
-  dialogGender.value = gender;
-  selectedDate.value = date;
-  dialogVisible.value = true;
+  dialogGender.value = gender;      // 设置对话框对应的性别
+  selectedDate.value = date;        // 设置选中的日期
+  
+  // 根据性别设置用户ID
+  if (gender === 'male') {
+    currentUserId.value = 1;        // 男生用户ID为1
+  } else if (gender === 'female') {
+    currentUserId.value = 2;        // 女生用户ID为2
+  }
+  
+  dialogVisible.value = true;       // 显示对话框
+};
+
+/**
+ * 处理保存成功事件
+ * @param {Object} data - 保存的数据
+ */
+const handleSaveSuccess = (data) => {
+  console.log('保存成功:', data);
+  // 这里可以添加成功提示，或者更新日历显示等
+  // 例如：显示成功消息、刷新数据等
 };
 </script>
 
