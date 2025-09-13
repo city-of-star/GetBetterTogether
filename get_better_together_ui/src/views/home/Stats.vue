@@ -416,9 +416,12 @@ const updateSportChart = (boySportRecords, girlSportRecords) => {
     yAxis: {
       type: 'value',
       name: '运动次数',
+      minInterval: 1, // 最小间隔为1
+      splitNumber: 5, // 设置分割段数
       axisLabel: {
         formatter: function(value) {
-          return value + '次'
+          // 确保只显示整数
+          return value % 1 === 0 ? value + '次' : ''
         }
       }
     },
