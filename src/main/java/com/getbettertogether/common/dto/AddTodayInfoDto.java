@@ -1,6 +1,7 @@
 package com.getbettertogether.common.dto;
 
 import lombok.Data;
+import java.time.LocalDateTime;
 
 /**
  * 实现功能【记录今日信息 Dto】
@@ -12,4 +13,5 @@ import lombok.Data;
 public class AddTodayInfoDto {
     private Integer userId;
     private Double weight;
+    private LocalDateTime date;
 }

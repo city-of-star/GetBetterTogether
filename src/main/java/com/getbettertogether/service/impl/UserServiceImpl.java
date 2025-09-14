@@ -83,12 +83,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addTodayInfo(AddTodayInfoDto addTodayInfoDto) {
-        // 获取今天的开始和结束时间
-        LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+        // 使用传入的日期，如果没有传入则使用当前时间
+        LocalDateTime targetDate = addTodayInfoDto.getDate() != null ? addTodayInfoDto.getDate() : LocalDateTime.now();
+        LocalDate targetDateOnly = targetDate.toLocalDate();
+        LocalDateTime startOfDay = targetDateOnly.atStartOfDay();
+        LocalDateTime endOfDay = targetDateOnly.atTime(23, 59, 59);
         
-        // 查询今天是否已经记录过体重
+        // 查询指定日期是否已经记录过体重
         QueryWrapper<UserWeight> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("user_id", addTodayInfoDto.getUserId())
                    .between("date", startOfDay, endOfDay);
@@ -96,16 +97,16 @@ public class UserServiceImpl implements UserService {
         UserWeight existingWeight = userWeightMapper.selectOne(queryWrapper);
         
         if (existingWeight != null) {
-            // 如果今天已经记录过，更新体重
+            // 如果指定日期已经记录过，更新体重
             existingWeight.setWeight(addTodayInfoDto.getWeight());
-            existingWeight.setDate(LocalDateTime.now());
+            existingWeight.setDate(targetDate);
             userWeightMapper.updateById(existingWeight);
         } else {
-            // 如果今天没有记录过，新增记录
+            // 如果指定日期没有记录过，新增记录
             UserWeight userWeight = new UserWeight();
             userWeight.setUserId(addTodayInfoDto.getUserId());
             userWeight.setWeight(addTodayInfoDto.getWeight());
-            userWeight.setDate(LocalDateTime.now());
+            userWeight.setDate(targetDate);
             userWeightMapper.insert(userWeight);
         }
     }

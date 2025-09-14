@@ -247,9 +247,13 @@ const saveWeight = async () => {
   if (!weight.value) return
   
   try {
+    // 创建本地日期时间，避免时区转换问题
+    const localDate = new Date(props.date.getFullYear(), props.date.getMonth(), props.date.getDate(), 12, 0, 0)
+    
     await axios.post('/user/setUserInfo', {
       userId: props.userId,
-      weight: parseFloat(weight.value)
+      weight: parseFloat(weight.value),
+      date: localDate.toISOString()
     })
     ElMessage({
       message: '体重保存成功',
@@ -275,10 +279,13 @@ const saveSportRecord = async () => {
   }
   
   try {
+    // 创建本地日期时间，避免时区转换问题
+    const localDate = new Date(props.date.getFullYear(), props.date.getMonth(), props.date.getDate(), 12, 0, 0)
+    
     await axios.post('/user/addSportRecord', {
       userId: props.userId,
       sportId: selectedSportId.value,
-      date: props.date.toISOString(),
+      date: localDate.toISOString(),
       coreValue1: coreValue1.value ? parseFloat(coreValue1.value) : null,
       coreValue2: coreValue2.value ? parseFloat(coreValue2.value) : null,
       notes: sportNotes.value || null
