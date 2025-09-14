@@ -92,67 +92,48 @@ DROP TEMPORARY TABLE IF EXISTS temp_user_weight;
 -- 首先禁用外键检查（仅在当前会话中）
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 插入顶层目录（父ID设为NULL）
-INSERT INTO get_better_together.sport (sport_name, father_id, sequence, is_directory)
-VALUES ('有氧运动', NULL, 1, '0');
 
+-- 插入顶层目录
 INSERT INTO get_better_together.sport (sport_name, father_id, sequence, is_directory)
-VALUES ('力量训练', NULL, 2, '0');
+VALUES ('有氧运动', NULL, 1, '0'),
+       ('力量训练', NULL, 2, '0'),
+       ('团队运动', NULL, 3, '0'),
+       ('其他运动', NULL, 4, '0');
 
-INSERT INTO get_better_together.sport (sport_name, father_id, sequence, is_directory)
-VALUES ('团队运动', NULL, 3, '0');
-
-INSERT INTO get_better_together.sport (sport_name, father_id, sequence, is_directory)
-VALUES ('其他运动', NULL, 4, '0');
-
--- 获取顶层目录的ID
+-- 获取顶层目录ID
 SET @aerobic_id = (SELECT sport_id FROM get_better_together.sport WHERE sport_name = '有氧运动');
 SET @strength_id = (SELECT sport_id FROM get_better_together.sport WHERE sport_name = '力量训练');
 SET @team_id = (SELECT sport_id FROM get_better_together.sport WHERE sport_name = '团队运动');
 SET @other_id = (SELECT sport_id FROM get_better_together.sport WHERE sport_name = '其他运动');
 
--- 插入有氧运动子项
+-- 插入有氧运动子项（包含散步）
 INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, core_name2, core_unit2, father_id, sequence, is_directory)
-VALUES ('跑步', '距离', '公里', '时间', '分钟', @aerobic_id, 1, '1');
+VALUES ('跑步', '距离', '公里', '时间', '分钟', @aerobic_id, 1, '1'),
+       ('散步', '距离', '公里', '时间', '分钟', @aerobic_id, 2, '1'),
+       ('游泳', '距离', '米', '时间', '分钟', @aerobic_id, 3, '1'),
+       ('骑自行车', '距离', '公里', NULL, NULL, @aerobic_id, 4, '1'),
+       ('跳绳', '次数', '次', NULL, NULL, @aerobic_id, 5, '1');
 
+-- 插入力量训练子项（包含平板支撑、俯卧撑、卷腹）
 INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, core_name2, core_unit2, father_id, sequence, is_directory)
-VALUES ('游泳', '距离', '米', '时间', '分钟', @aerobic_id, 2, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('骑自行车', '距离', '公里', @aerobic_id, 3, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('跳绳', '次数', '次', @aerobic_id, 4, '1');
-
--- 插入力量训练子项
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, core_name2, core_unit2, father_id, sequence, is_directory)
-VALUES ('深蹲', '重量', 'kg', '次数', '次', @strength_id, 1, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, core_name2, core_unit2, father_id, sequence, is_directory)
-VALUES ('卧推', '重量', 'kg', '次数', '次', @strength_id, 2, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, core_name2, core_unit2, father_id, sequence, is_directory)
-VALUES ('硬拉', '重量', 'kg', '次数', '次', @strength_id, 3, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, core_name2, core_unit2, father_id, sequence, is_directory)
-VALUES ('引体向上', '次数', '次', '组数', '组', @strength_id, 4, '1');
+VALUES ('平板支撑', '时间', '分钟', '组数', '组', @strength_id, 1, '1'),
+       ('俯卧撑', '次数', '次', '组数', '组', @strength_id, 2, '1'),
+       ('卷腹', '次数', '次', '组数', '组', @strength_id, 3, '1'),
+       ('深蹲', '组数', '组', '次数', '次', @strength_id, 4, '1'),
+       ('卧推', '重量', 'kg', '次数', '次', @strength_id, 5, '1'),
+       ('硬拉', '重量', 'kg', '次数', '次', @strength_id, 6, '1'),
+       ('引体向上', '次数', '次', '组数', '组', @strength_id, 7, '1');
 
 -- 插入团队运动子项
 INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('篮球', '时间', '分钟', @team_id, 1, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('足球', '时间', '分钟', @team_id, 2, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('排球', '时间', '分钟', @team_id, 3, '1');
+VALUES ('篮球', '时间', '分钟', @team_id, 1, '1'),
+       ('足球', '时间', '分钟', @team_id, 2, '1'),
+       ('排球', '时间', '分钟', @team_id, 3, '1');
 
 -- 插入其他运动子项
 INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('瑜伽', '时间', '分钟', @other_id, 1, '1');
-
-INSERT INTO get_better_together.sport (sport_name, core_name1, core_unit1, father_id, sequence, is_directory)
-VALUES ('普拉提', '时间', '分钟', @other_id, 2, '1');
+VALUES ('瑜伽', '时间', '分钟', @other_id, 1, '1'),
+       ('普拉提', '时间', '分钟', @other_id, 2, '1');
 
 -- 重新启用外键检查
 SET FOREIGN_KEY_CHECKS = 1;
