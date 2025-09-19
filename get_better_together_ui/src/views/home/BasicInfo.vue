@@ -33,14 +33,14 @@
             </span>
           </div>
           <div class="info-item">
-            <span class="label">身高</span>
+            <span class="label">初始身高</span>
             <span class="value">
               <input v-if="editingMale" v-model="maleForm.initialHeight" type="number" class="edit-input">
               <span v-else>{{ maleInfo.initialHeight || '--' }}cm</span>
             </span>
           </div>
           <div class="info-item">
-            <span class="label">体重</span>
+            <span class="label">初始体重</span>
             <span class="value">
               <input v-if="editingMale" v-model="maleForm.initialWeight" type="number" class="edit-input">
               <span v-else>{{ maleInfo.initialWeight || '--' }}kg</span>
@@ -98,14 +98,14 @@
             </span>
           </div>
           <div class="info-item">
-            <span class="label">身高</span>
+            <span class="label">初始身高</span>
             <span class="value">
               <input v-if="editingFemale" v-model="femaleForm.initialHeight" type="number" class="edit-input">
               <span v-else>{{ femaleInfo.initialHeight || '--' }}cm</span>
             </span>
           </div>
           <div class="info-item">
-            <span class="label">体重</span>
+            <span class="label">初始体重</span>
             <span class="value">
               <input v-if="editingFemale" v-model="femaleForm.initialWeight" type="number" class="edit-input">
               <span v-else>{{ femaleInfo.initialWeight || '--' }}kg</span>
