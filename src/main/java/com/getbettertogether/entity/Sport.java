@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 实现功能【运动项目定义实体】
@@ -13,6 +14,7 @@ import lombok.Data;
  */
 @Data
 @TableName("sport")
+@Accessors(chain = true)
 public class Sport {
     @TableId(type = IdType.AUTO)
     private Integer sportId;

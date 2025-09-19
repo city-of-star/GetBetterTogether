@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 /**
  * 实现功能【用户实体】
@@ -13,6 +14,7 @@ import lombok.Data;
  */
 @Data
 @TableName("user")
+@Accessors(chain = true)
 public class User {
     @TableId(type = IdType.AUTO)
     private Integer userId;

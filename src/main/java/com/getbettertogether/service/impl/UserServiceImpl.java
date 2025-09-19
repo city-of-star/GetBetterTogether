@@ -49,31 +49,49 @@ public class UserServiceImpl implements UserService {
     private final SportMapper sportMapper;
     private final SportRecordMapper sportRecordMapper;
 
+    /**
+     * 添加新用户
+     * 根据用户基本信息创建新用户，自动计算BMI值
+     *
+     * @param addUserDto 用户基本信息DTO，包含昵称、性别、年龄、身高、体重等信息
+     */
     @Override
     public void addUser(AddUserDto addUserDto) {
-        User user = new User();
-        user.setNickname(addUserDto.getNickname());
-        user.setSex(addUserDto.getSex());
-        user.setAge(addUserDto.getAge());
-        user.setInitialHeight(addUserDto.getInitialHeight());
-        user.setInitialWeight(addUserDto.getInitialWeight());
-        user.setBmi(BmiUtils.calculateBmi(addUserDto.getInitialHeight(), addUserDto.getInitialWeight()));
+        User user = new User()
+                .setNickname(addUserDto.getNickname())
+                .setSex(addUserDto.getSex())
+                .setAge(addUserDto.getAge())
+                .setInitialHeight(addUserDto.getInitialHeight())
+                .setInitialWeight(addUserDto.getInitialWeight())
+                .setBmi(BmiUtils.calculateBmi(addUserDto.getInitialHeight(), addUserDto.getInitialWeight()));
         userMapper.insert(user);
     }
 
+    /**
+     * 更新用户信息
+     * 根据用户ID更新用户的基本信息，重新计算BMI值
+     *
+     * @param updateUserDto 用户更新信息DTO，包含用户ID和要更新的基本信息
+     */
     @Override
     public void updateUser(UpdateUserDto updateUserDto) {
-        User user = new User();
-        user.setUserId(updateUserDto.getUserId());
-        user.setNickname(updateUserDto.getNickname());
-        user.setSex(updateUserDto.getSex());
-        user.setAge(updateUserDto.getAge());
-        user.setInitialHeight(updateUserDto.getInitialHeight());
-        user.setInitialWeight(updateUserDto.getInitialWeight());
-        user.setBmi(BmiUtils.calculateBmi(updateUserDto.getInitialHeight(), updateUserDto.getInitialWeight()));
+        User user = new User()
+                .setUserId(updateUserDto.getUserId())
+                .setNickname(updateUserDto.getNickname())
+                .setSex(updateUserDto.getSex())
+                .setAge(updateUserDto.getAge())
+                .setInitialHeight(updateUserDto.getInitialHeight())
+                .setInitialWeight(updateUserDto.getInitialWeight())
+                .setBmi(BmiUtils.calculateBmi(updateUserDto.getInitialHeight(), updateUserDto.getInitialWeight()));
         userMapper.updateById(user);
     }
 
+    /**
+     * 获取所有用户信息
+     * 查询并返回系统中所有用户的基本信息列表
+     *
+     * @return UserInfoVo 用户信息视图对象，包含用户列表
+     */
     @Override
     public UserInfoVo getUsers() {
         UserInfoVo vo = new UserInfoVo();
@@ -81,6 +99,12 @@ public class UserServiceImpl implements UserService {
         return vo;
     }
 
+    /**
+     * 添加今日信息
+     * 记录用户当天的体重等健康数据
+     *
+     * @param addTodayInfoDto 今日信息DTO，包含用户ID、体重、记录日期等信息
+     */
     @Override
     public void addTodayInfo(AddTodayInfoDto addTodayInfoDto) {
         // 使用传入的日期，如果没有传入则使用当前时间
@@ -111,6 +135,13 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    /**
+     * 获取用户体重记录列表
+     * 根据查询条件获取指定用户的体重变化历史记录
+     *
+     * @param dto 体重记录查询DTO，包含用户ID、查询时间范围等条件
+     * @return UserWeightListVo 用户体重记录视图对象，包含体重记录列表
+     */
     @Override
     public UserWeightListVo getUserWeightList(UserWeightListDto dto) {
         UserWeightListVo res = new UserWeightListVo();
@@ -146,6 +177,12 @@ public class UserServiceImpl implements UserService {
         return res;
     }
 
+    /**
+     * 获取运动项目树形结构
+     * 获取所有运动项目的层级结构，用于前端展示运动分类
+     *
+     * @return SportTreeVo 运动项目树形结构视图对象
+     */
     @Override
     public SportTreeVo getSportTree() {
         SportTreeVo result = new SportTreeVo();
@@ -163,41 +200,13 @@ public class UserServiceImpl implements UserService {
         
         return result;
     }
-    
-    private List<SportTreeVo.SportTreeNode> buildSportTree(Map<Integer, List<Sport>> sportsByFatherId, Integer fatherId) {
-        List<Sport> children = sportsByFatherId.get(fatherId);
-        if (children == null || children.isEmpty()) {
-            return new ArrayList<>();
-        }
-        
-        return children.stream()
-                .sorted((s1, s2) -> {
-                    if (s1.getSequence() == null && s2.getSequence() == null) return 0;
-                    if (s1.getSequence() == null) return 1;
-                    if (s2.getSequence() == null) return -1;
-                    return s1.getSequence().compareTo(s2.getSequence());
-                })
-                .map(sport -> {
-                    SportTreeVo.SportTreeNode node = new SportTreeVo.SportTreeNode();
-                    node.setSportId(sport.getSportId());
-                    node.setSportName(sport.getSportName());
-                    node.setCoreName1(sport.getCoreName1());
-                    node.setCoreName2(sport.getCoreName2());
-                    node.setCoreUnit1(sport.getCoreUnit1());
-                    node.setCoreUnit2(sport.getCoreUnit2());
-                    node.setFatherId(sport.getFatherId());
-                    node.setSequence(sport.getSequence());
-                    node.setIsDirectory(sport.getIsDirectory());
-                    
-                    // 递归构建子节点
-                    List<SportTreeVo.SportTreeNode> childNodes = buildSportTree(sportsByFatherId, sport.getSportId());
-                    node.setChildren(childNodes);
-                    
-                    return node;
-                })
-                .collect(Collectors.toList());
-    }
 
+    /**
+     * 添加运动记录
+     * 记录用户完成的运动项目及运动量
+     *
+     * @param addSportRecordDto 运动记录DTO，包含用户ID、运动项目、运动量、记录日期等信息
+     */
     @Override
     public void addSportRecord(AddSportRecordDto addSportRecordDto) {
         SportRecord sportRecord = new SportRecord();
@@ -210,6 +219,13 @@ public class UserServiceImpl implements UserService {
         sportRecordMapper.insert(sportRecord);
     }
 
+    /**
+     * 获取用户运动记录列表
+     * 根据查询条件获取指定用户的运动历史记录
+     *
+     * @param dto 运动记录查询DTO，包含用户ID、查询时间范围等条件
+     * @return UserSportRecordListVo 用户运动记录视图对象，包含运动记录列表
+     */
     @Override
     public UserSportRecordListVo getUserSportRecordList(UserSportRecordListDto dto) {
         UserSportRecordListVo res = new UserSportRecordListVo();
@@ -243,5 +259,47 @@ public class UserServiceImpl implements UserService {
         res.setBoySportRecords(boySportRecords);
         res.setGirlSportRecords(girlSportRecords);
         return res;
+    }
+
+    /**
+     * 构建运动项目树形结构
+     * 递归构建运动项目的层级树形结构，按sequence字段排序
+     *
+     * @param sportsByFatherId 按父ID分组的运动项目映射
+     * @param fatherId 父节点ID，0表示根节点
+     * @return 运动项目树节点列表
+     */
+    private List<SportTreeVo.SportTreeNode> buildSportTree(Map<Integer, List<Sport>> sportsByFatherId, Integer fatherId) {
+        List<Sport> children = sportsByFatherId.get(fatherId);
+        if (children == null || children.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        return children.stream()
+                .sorted((s1, s2) -> {
+                    if (s1.getSequence() == null && s2.getSequence() == null) return 0;
+                    if (s1.getSequence() == null) return 1;
+                    if (s2.getSequence() == null) return -1;
+                    return s1.getSequence().compareTo(s2.getSequence());
+                })
+                .map(sport -> {
+                    SportTreeVo.SportTreeNode node = new SportTreeVo.SportTreeNode();
+                    node.setSportId(sport.getSportId());
+                    node.setSportName(sport.getSportName());
+                    node.setCoreName1(sport.getCoreName1());
+                    node.setCoreName2(sport.getCoreName2());
+                    node.setCoreUnit1(sport.getCoreUnit1());
+                    node.setCoreUnit2(sport.getCoreUnit2());
+                    node.setFatherId(sport.getFatherId());
+                    node.setSequence(sport.getSequence());
+                    node.setIsDirectory(sport.getIsDirectory());
+                    
+                    // 递归构建子节点
+                    List<SportTreeVo.SportTreeNode> childNodes = buildSportTree(sportsByFatherId, sport.getSportId());
+                    node.setChildren(childNodes);
+                    
+                    return node;
+                })
+                .collect(Collectors.toList());
     }
 }
