@@ -13,6 +13,9 @@ echo 项目根目录: %ROOT_DIR%
 echo 正在检测环境版本...
 echo.
 
+:: 初始化错误标志
+set "ERROR_FLAG=0"
+
 :: 1. JDK版本检测
 where java >nul 2>nul
 if %errorlevel% equ 0 (
@@ -23,12 +26,25 @@ if %errorlevel% equ 0 (
     set "jdk_ver=!jdk_ver:"=!"
     echo 当前版本: !jdk_ver!
     for /f "tokens=1,2 delims=._" %%a in ("!jdk_ver!") do (
-        if %%a geq 17 (echo ✅ JDK版本符合要求（≥17）) else (echo ❌ JDK版本过低，需要≥17)
+        if %%a lss 17 (
+            echo ❌ JDK版本过低，需要≥17（最好用java17）
+            set "ERROR_FLAG=1"
+        ) else (
+            echo ✅ JDK版本符合要求（≥17，最好用java17）
+        )
     )
 ) else (
     echo ❌ 未检测到JDK
+    set "ERROR_FLAG=1"
 )
 echo.
+
+:: 如果检测到错误，终止脚本
+if %ERROR_FLAG% equ 1 (
+    echo ⚠️ 环境检测未通过，请先解决上述问题再运行脚本
+    pause
+    exit /b 1
+)
 
 :: 2. Node.js版本检测
 where node >nul 2>nul
@@ -38,12 +54,25 @@ if %errorlevel% equ 0 (
     set "node_ver=!node_ver:~1!"
     echo 当前版本: !node_ver!
     for /f "tokens=1 delims=." %%a in ("!node_ver!") do (
-        if %%a geq 16 (echo ✅ Node.js版本符合要求（≥16）) else (echo ❌ Node.js版本过低，需要≥16)
+        if %%a lss 16 (
+            echo ❌ Node.js版本过低，需要≥16（最好是22.14.0版本）
+            set "ERROR_FLAG=1"
+        ) else (
+            echo ✅ Node.js版本符合要求（≥16，最好是22.14.0版本）
+        )
     )
 ) else (
     echo ❌ 未检测到Node.js
+    set "ERROR_FLAG=1"
 )
 echo.
+
+:: 如果检测到错误，终止脚本
+if %ERROR_FLAG% equ 1 (
+    echo ⚠️ 环境检测未通过，请先解决上述问题再运行脚本
+    pause
+    exit /b 1
+)
 
 :: 3. 检测 MySQL 服务状态
 echo [MySQL status]
@@ -74,8 +103,16 @@ if %errorlevel% equ 0 (
     )
 ) else (
     echo ❌ MySQL服务未运行（端口3306无监听）
+    set "ERROR_FLAG=1"
 )
 echo.
+
+:: 如果检测到错误，终止脚本
+if %ERROR_FLAG% equ 1 (
+    echo ⚠️ 环境检测未通过，请先解决上述问题再运行脚本
+    pause
+    exit /b 1
+)
 
 :: ============================================
 :: 检查端口占用情况
@@ -129,7 +166,7 @@ if exist "%BACKEND_DIR%mvnw.cmd" (
     echo 检测到Maven Wrapper，使用mvnw命令
 )
 
-echo 正在安装后端依赖并启动Spring Boot...
+echo 正在启动Spring Boot...
 if "%SHOW_CONSOLE%"=="1" (
     start "后端服务" cmd /c "cd /d "%BACKEND_DIR%" && %MVN_CMD% spring-boot:run && exit"
 ) else (
